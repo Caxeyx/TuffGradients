@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { Sparkles, Layers, Sliders, Palette, Moon, Sun, Compass } from 'lucide-react';
 
 export default function Header({ activeTab, setActiveTab, isDark, setIsDark, onRandomize }) {
@@ -96,6 +97,7 @@ export default function Header({ activeTab, setActiveTab, isDark, setIsDark, onR
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
                 style={{
+                  position: 'relative',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
@@ -104,15 +106,30 @@ export default function Header({ activeTab, setActiveTab, isDark, setIsDark, onR
                   fontSize: '0.84rem',
                   fontWeight: isActive ? 600 : 500,
                   color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                  background: isActive ? 'var(--bg-secondary)' : 'transparent',
-                  boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)' : 'none',
-                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                  background: 'transparent',
                   whiteSpace: 'nowrap',
-                  flexShrink: 0
+                  flexShrink: 0,
+                  cursor: 'pointer'
                 }}
               >
-                <Icon size={15} style={{ opacity: isActive ? 1 : 0.7 }} />
-                <span>{item.label}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="activeNavTab"
+                    transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      borderRadius: 'var(--radius-full)',
+                      background: 'var(--bg-secondary)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)',
+                      zIndex: 1
+                    }}
+                  />
+                )}
+                <span style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Icon size={15} style={{ opacity: isActive ? 1 : 0.7 }} />
+                  <span>{item.label}</span>
+                </span>
               </button>
             );
           })}

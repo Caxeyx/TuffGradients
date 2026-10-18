@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
+import { motion, AnimatePresence } from 'framer-motion';
 import Header from './components/Header';
 import HomeView from './components/HomeView';
 import ColorHuntBrowser from './components/ColorHuntBrowser';
@@ -76,56 +77,67 @@ export default function App() {
         />
       )}
 
-      {/* Main View Area */}
-      <main style={{ flex: 1 }}>
-        {activeTab === 'home' && (
-          <HomeView
-            setActiveTab={setActiveTab}
-            onSelectColor={handleSelectColorFromTrend}
-            onCopy={handleCopy}
-            copiedHex={copiedHex}
-          />
-        )}
+      {/* Main View Area with Framer Motion Page Transitions */}
+      <main style={{ flex: 1, position: 'relative' }}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -8, filter: 'blur(4px)' }}
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            style={{ width: '100%', height: '100%' }}
+          >
+            {activeTab === 'home' && (
+              <HomeView
+                setActiveTab={setActiveTab}
+                onSelectColor={handleSelectColorFromTrend}
+                onCopy={handleCopy}
+                copiedHex={copiedHex}
+              />
+            )}
 
-        {activeTab === 'explore-hunt' && (
-          <ColorHuntBrowser
-            onSelectColor={handleSelectColorFromTrend}
-            onCopy={handleCopy}
-            copiedHex={copiedHex}
-          />
-        )}
+            {activeTab === 'explore-hunt' && (
+              <ColorHuntBrowser
+                onSelectColor={handleSelectColorFromTrend}
+                onCopy={handleCopy}
+                copiedHex={copiedHex}
+              />
+            )}
 
-        {activeTab === 'pantone-trends' && (
-          <PantoneTrends
-            onSelectColor={handleSelectColorFromTrend}
-            onCopy={handleCopy}
-            copiedHex={copiedHex}
-          />
-        )}
+            {activeTab === 'pantone-trends' && (
+              <PantoneTrends
+                onSelectColor={handleSelectColorFromTrend}
+                onCopy={handleCopy}
+                copiedHex={copiedHex}
+              />
+            )}
 
-        {activeTab === 'harmonies' && (
-          <HarmoniesView
-            baseColor={baseColor}
-            setBaseColor={setBaseColor}
-            onCopy={handleCopy}
-            copiedHex={copiedHex}
-          />
-        )}
+            {activeTab === 'harmonies' && (
+              <HarmoniesView
+                baseColor={baseColor}
+                setBaseColor={setBaseColor}
+                onCopy={handleCopy}
+                copiedHex={copiedHex}
+              />
+            )}
 
-        {activeTab === 'gradients' && (
-          <GradientsView
-            onCopy={handleCopy}
-            copiedHex={copiedHex}
-          />
-        )}
+            {activeTab === 'gradients' && (
+              <GradientsView
+                onCopy={handleCopy}
+                copiedHex={copiedHex}
+              />
+            )}
 
-        {activeTab === 'studio-preview' && (
-          <StudioPreview
-            activePalette={baseColor}
-            onCopy={handleCopy}
-            copiedHex={copiedHex}
-          />
-        )}
+            {activeTab === 'studio-preview' && (
+              <StudioPreview
+                activePalette={baseColor}
+                onCopy={handleCopy}
+                copiedHex={copiedHex}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {/* Apple-grade Minimal Footer (Hidden on home page for pure whole screen experience) */}
