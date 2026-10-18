@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Copy, Check, X, Palette, ChevronLeft, ChevronRight, Compass, Sparkles, Layers, Sliders, Menu } from 'lucide-react';
+import { Copy, Check, X, Palette, ChevronLeft, ChevronRight, Compass, Sparkles, Layers, Sliders, Menu, RotateCw, RefreshCw } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import gsap from 'gsap';
 import { PANTONE_BOOKS } from '../data/pantoneDeckData';
 
@@ -15,6 +16,9 @@ export default function MinimalShadeDeck({ onSelectColor, onCopy, copiedHex, set
 
   // Hovered card index for z-index layering
   const [hoveredCardIdx, setHoveredCardIdx] = useState(null);
+
+  // A24 3D Flipped Strip ID state (flips card over to holographic/formula specs back)
+  const [flippedStripId, setFlippedStripId] = useState(null);
 
   // Mobile Discovery drawer state
   const [showNavSheet, setShowNavSheet] = useState(false);
@@ -106,6 +110,45 @@ export default function MinimalShadeDeck({ onSelectColor, onCopy, copiedHex, set
     window.addEventListener('wheel', onWheel, { passive: false });
     return () => window.removeEventListener('wheel', onWheel);
   }, [isOpen, cards]);
+
+  // A24 Keyboard Navigation: Arrow keys rotate deck, Space flips active/hovered strip
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Don't intercept if an input or textarea is active
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (!isOpen) {
+          setIsOpen(true);
+          return;
+        }
+        // Flip the currently hovered card, or the middle card
+        const targetIdx = hoveredCardIdx !== null ? hoveredCardIdx : Math.floor(cards.length / 2);
+        const targetCard = cards[targetIdx];
+        if (targetCard) {
+          setFlippedStripId((prev) => (prev === targetCard.stripNumber ? null : targetCard.stripNumber));
+        }
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        if (!isOpen) setIsOpen(true);
+        const newOffset = Math.max(-45, rotOffsetRef.current - 5);
+        rotOffsetRef.current = newOffset;
+        setRotationOffset(newOffset);
+        updateCardRotations(newOffset);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        if (!isOpen) setIsOpen(true);
+        const newOffset = Math.min(45, rotOffsetRef.current + 5);
+        rotOffsetRef.current = newOffset;
+        setRotationOffset(newOffset);
+        updateCardRotations(newOffset);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, cards, hoveredCardIdx]);
 
   // Pointer drag listeners for rotating fan deck
   const onPointerDown = (e) => {
@@ -474,9 +517,10 @@ export default function MinimalShadeDeck({ onSelectColor, onCopy, copiedHex, set
           transformOrigin: '50% calc(100% - 30px)'
         }}
       >
-        {/* SHADE CARDS (Fanning across the screen) */}
+        {/* SHADE CARDS (Fanning across the screen with A24 3D Flip) */}
         {cards.map((card, idx) => {
           const isHovered = hoveredCardIdx === idx;
+          const isFlipped = flippedStripId === card.stripNumber;
           const zIndex = isHovered ? 90 : 10 + idx;
 
           return (
@@ -497,106 +541,300 @@ export default function MinimalShadeDeck({ onSelectColor, onCopy, copiedHex, set
                 left: 0,
                 width: `${cardWidth}px`,
                 height: cardHeight,
-                borderRadius: isMobile ? '16px 16px 22px 22px' : '20px 20px 28px 28px',
-                backgroundColor: '#FFFFFF',
-                boxShadow: isHovered && isOpen
-                  ? '0 24px 60px rgba(0,0,0,0.22), 0 0 0 2px var(--accent-apple-blue)'
-                  : '0 10px 30px rgba(0,0,0,0.08), -1px 2px 8px rgba(0,0,0,0.04)',
-                border: '1px solid rgba(0,0,0,0.08)',
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden',
-                cursor: 'pointer',
                 transformOrigin: '50% calc(100% - 30px)', // Bottom center pivot screw!
                 willChange: 'transform',
-                transform: 'translateZ(0)'
+                transform: 'translateZ(0)',
+                perspective: '1200px'
               }}
             >
-              {/* Strip Header Tab */}
-              <div style={{
-                padding: '16px 18px 10px 18px',
-                background: '#FFFFFF',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderBottom: '1px solid #ECECEC'
-              }}>
-                <span style={{ fontSize: '0.96rem', fontWeight: 900, color: '#1D1D1F', letterSpacing: '0.04em' }}>
-                  {card.stripNumber}
-                </span>
-                <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#888888', textTransform: 'uppercase', letterSpacing: '0.04em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
-                  {card.family}
-                </span>
-              </div>
+              {/* Inner 3D Flippable Container */}
+              <div
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  position: 'relative',
+                  transformStyle: 'preserve-3d',
+                  transition: 'transform 0.65s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease',
+                  transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                  borderRadius: isMobile ? '16px 16px 22px 22px' : '20px 20px 28px 28px',
+                  boxShadow: isHovered && isOpen
+                    ? '0 24px 60px rgba(0,0,0,0.22), 0 0 0 2px var(--accent-apple-blue)'
+                    : '0 10px 30px rgba(0,0,0,0.08), -1px 2px 8px rgba(0,0,0,0.04)',
+                  border: '1px solid rgba(0,0,0,0.08)'
+                }}
+              >
+                {/* ================= FRONT SIDE (Color Chips) ================= */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    backfaceVisibility: 'hidden',
+                    WebkitBackfaceVisibility: 'hidden',
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: isMobile ? '16px 16px 22px 22px' : '20px 20px 28px 28px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden'
+                  }}
+                >
+                  {/* Strip Header Tab */}
+                  <div style={{
+                    padding: '14px 16px 8px 16px',
+                    background: '#FFFFFF',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    borderBottom: '1px solid #ECECEC'
+                  }}>
+                    <div>
+                      <span style={{ fontSize: '0.96rem', fontWeight: 900, color: '#1D1D1F', letterSpacing: '0.04em' }}>
+                        {card.stripNumber}
+                      </span>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#888888', textTransform: 'uppercase', display: 'block' }}>
+                        {card.family}
+                      </span>
+                    </div>
 
-              {/* Color Chips Stack (Crisp White Hairlines, Stretching Full Height) */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                {card.chips.map((chip, cIdx) => (
+                    {/* A24 Flip Trigger Button */}
+                    {isOpen && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFlippedStripId(isFlipped ? null : card.stripNumber);
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '3px',
+                          padding: '3px 8px',
+                          borderRadius: '9999px',
+                          background: 'rgba(0,0,0,0.05)',
+                          border: 'none',
+                          color: '#555555',
+                          fontSize: '0.64rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
+                        title="Flip to back: View A24 technical ink matrix (or press Space)"
+                      >
+                        <RotateCw size={11} />
+                        <span>FLIP</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Color Chips Stack */}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    {card.chips.map((chip, cIdx) => (
+                      <div
+                        key={chip.code || cIdx}
+                        onClick={(e) => handleChipClick(chip, card, e)}
+                        style={{
+                          flex: 1,
+                          backgroundColor: chip.hex,
+                          borderBottom: cIdx < card.chips.length - 1 ? '2.5px solid #FFFFFF' : 'none',
+                          padding: '6px 12px',
+                          display: 'flex',
+                          alignItems: 'flex-end',
+                          justifyContent: 'space-between',
+                          cursor: 'pointer',
+                          position: 'relative'
+                        }}
+                        title={`${chip.code} - ${chip.name} (${chip.hex})`}
+                      >
+                        {/* Chip Label Box */}
+                        <div style={{
+                          background: '#FFFFFF',
+                          padding: isMobile ? '2px 5px' : '3px 8px',
+                          borderRadius: '5px',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
+                          maxWidth: '85%'
+                        }}>
+                          <div style={{ fontSize: isMobile ? '0.66rem' : '0.74rem', fontWeight: 900, color: '#1D1D1F', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.15 }}>
+                            {chip.code}
+                          </div>
+                          <div style={{ fontSize: isMobile ? '0.58rem' : '0.64rem', color: '#555555', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.15 }}>
+                            {chip.name}
+                          </div>
+                        </div>
+
+                        {/* Tap Indicator */}
+                        <div style={{
+                          width: isMobile ? '16px' : '20px',
+                          height: isMobile ? '16px' : '20px',
+                          borderRadius: '50%',
+                          background: 'rgba(255,255,255,0.9)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          opacity: 0.8
+                        }}>
+                          <span style={{ fontSize: isMobile ? '0.58rem' : '0.65rem', fontWeight: 800, color: '#1D1D1F' }}>+</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Bottom Pivot Base area */}
+                  <div style={{
+                    height: '65px',
+                    background: '#FFFFFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0 18px',
+                    borderTop: '1px solid #F0F0F0'
+                  }}>
+                    <span style={{ fontSize: '0.66rem', fontWeight: 700, color: '#888888', textTransform: 'uppercase' }}>
+                      {currentBook.edition.substring(0, 16)}
+                    </span>
+                    <span style={{ fontSize: '0.64rem', fontWeight: 700, color: '#AAAAAA', fontFamily: 'var(--font-mono)' }}>
+                      [SPACE] FLIP
+                    </span>
+                  </div>
+                </div>
+
+                {/* ================= BACK SIDE (A24-Style Technical Archive Data) ================= */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    backfaceVisibility: 'hidden',
+                    WebkitBackfaceVisibility: 'hidden',
+                    transform: 'rotateY(180deg)',
+                    backgroundColor: '#121214',
+                    color: '#F4F4F6',
+                    borderRadius: isMobile ? '16px 16px 22px 22px' : '20px 20px 28px 28px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    overflow: 'hidden',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    background: 'radial-gradient(circle at 50% 20%, #1F2024 0%, #0E0F12 100%)'
+                  }}
+                >
+                  {/* Subtle Holographic Foil Sheen */}
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(135deg, rgba(255,0,128,0.06) 0%, rgba(0,240,255,0.08) 50%, rgba(255,200,0,0.06) 100%)',
+                    pointerEvents: 'none'
+                  }} />
+
+                  {/* Back Header */}
+                  <div style={{
+                    padding: '16px 18px 12px 18px',
+                    borderBottom: '1px solid rgba(255,255,255,0.08)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    position: 'relative',
+                    zIndex: 2
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.12em', color: '#8E8E93', textTransform: 'uppercase' }}>
+                        A24 ARCHIVE SPEC
+                      </div>
+                      <div style={{ fontSize: '1.05rem', fontWeight: 900, color: '#FFFFFF', letterSpacing: '-0.02em', marginTop: '2px' }}>
+                        {card.stripNumber} • {card.family}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFlippedStripId(null);
+                      }}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '9999px',
+                        background: 'rgba(255,255,255,0.12)',
+                        border: 'none',
+                        color: '#FFFFFF',
+                        fontSize: '0.66rem',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                      title="Flip back to front"
+                    >
+                      FLIP BACK
+                    </button>
+                  </div>
+
+                  {/* Back Content: Technical Ink Formula Grid */}
                   <div
-                    key={chip.code || cIdx}
-                    onClick={(e) => handleChipClick(chip, card, e)}
+                    className="no-scrollbar"
                     style={{
                       flex: 1,
-                      backgroundColor: chip.hex,
-                      borderBottom: cIdx < card.chips.length - 1 ? '2.5px solid #FFFFFF' : 'none',
-                      padding: '8px 14px',
+                      padding: '14px 16px',
+                      overflowY: 'auto',
                       display: 'flex',
-                      alignItems: 'flex-end',
-                      justifyContent: 'space-between',
-                      cursor: 'pointer',
-                      position: 'relative'
+                      flexDirection: 'column',
+                      gap: '8px',
+                      position: 'relative',
+                      zIndex: 2
                     }}
-                    title={`${chip.code} - ${chip.name} (${chip.hex})`}
                   >
-                    {/* Chip Label Box */}
-                    <div style={{
-                      background: '#FFFFFF',
-                      padding: isMobile ? '2px 5px' : '3px 8px',
-                      borderRadius: '5px',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
-                      maxWidth: '85%'
-                    }}>
-                      <div style={{ fontSize: isMobile ? '0.66rem' : '0.74rem', fontWeight: 900, color: '#1D1D1F', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.15 }}>
-                        {chip.code}
-                      </div>
-                      <div style={{ fontSize: isMobile ? '0.58rem' : '0.64rem', color: '#555555', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.15 }}>
-                        {chip.name}
-                      </div>
+                    <div style={{ fontSize: '0.64rem', color: '#636366', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.06em' }}>
+                      FORMULATION MATRIX ({card.chips.length} SHADES)
                     </div>
 
-                    {/* Tap / Click Indicator */}
-                    <div style={{
-                      width: isMobile ? '16px' : '20px',
-                      height: isMobile ? '16px' : '20px',
-                      borderRadius: '50%',
-                      background: 'rgba(255,255,255,0.9)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      opacity: 0.8
-                    }}>
-                      <span style={{ fontSize: isMobile ? '0.58rem' : '0.65rem', fontWeight: 800, color: '#1D1D1F' }}>+</span>
-                    </div>
+                    {card.chips.map((chip, cIdx) => (
+                      <div
+                        key={cIdx}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onCopy) onCopy(chip.hex, 'HEX');
+                        }}
+                        style={{
+                          background: 'rgba(255,255,255,0.04)',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(255,255,255,0.06)',
+                          padding: '6px 10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          cursor: 'pointer',
+                          transition: 'background 0.2s ease'
+                        }}
+                        title={`Click to copy ${chip.hex}`}
+                      >
+                        <div style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: chip.hex, boxShadow: '0 0 8px rgba(0,0,0,0.5)', flexShrink: 0 }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {chip.code}
+                            </span>
+                            <span style={{ fontSize: '0.7rem', fontFamily: 'var(--font-mono)', color: '#38BDF8', fontWeight: 700 }}>
+                              {chip.hex}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '0.62rem', color: '#8E8E93', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {chip.name} • {chip.cmyk || 'Solid Spot'}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
 
-              {/* Bottom Pivot Base area */}
-              <div style={{
-                height: '70px',
-                background: '#FFFFFF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0 20px',
-                borderTop: '1px solid #F0F0F0'
-              }}>
-                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#888888', textTransform: 'uppercase' }}>
-                  {currentBook.edition.substring(0, 18)}
-                </span>
-                <span style={{ fontSize: '0.66rem', fontWeight: 700, color: '#AAAAAA' }}>
-                  {card.stripNumber}
-                </span>
+                  {/* Back Footer */}
+                  <div style={{
+                    padding: '12px 18px',
+                    borderTop: '1px solid rgba(255,255,255,0.08)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    position: 'relative',
+                    zIndex: 2,
+                    fontSize: '0.64rem',
+                    color: '#636366',
+                    fontFamily: 'var(--font-mono)'
+                  }}>
+                    <span>PRESS SPACE TO TOGGLE</span>
+                    <span style={{ color: '#00F0FF' }}>AUTHENTIC PANTONE®</span>
+                  </div>
+                </div>
               </div>
             </div>
           );
@@ -725,6 +963,52 @@ export default function MinimalShadeDeck({ onSelectColor, onCopy, copiedHex, set
           <div style={{ width: '16px', height: '2.5px', backgroundColor: '#555559', transform: 'rotate(45deg)' }} />
         </div>
       </div>
+
+      {/* A24 Tactile Interaction Pill */}
+      {isOpen && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: isMobile ? '8px' : '16px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 65,
+            display: 'flex',
+            alignItems: 'center',
+            gap: isMobile ? '6px' : '12px',
+            padding: isMobile ? '6px 12px' : '8px 16px',
+            borderRadius: '9999px',
+            backgroundColor: 'rgba(29, 29, 31, 0.85)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            color: '#F5F5F7',
+            fontSize: isMobile ? '0.66rem' : '0.74rem',
+            fontWeight: 600,
+            letterSpacing: '0.03em',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            pointerEvents: 'none',
+            userSelect: 'none'
+          }}
+        >
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <kbd style={{ background: 'rgba(255,255,255,0.15)', padding: '2px 5px', borderRadius: '4px', fontSize: '0.65rem', fontFamily: 'monospace' }}>←</kbd>
+            <kbd style={{ background: 'rgba(255,255,255,0.15)', padding: '2px 5px', borderRadius: '4px', fontSize: '0.65rem', fontFamily: 'monospace' }}>→</kbd>
+            <span>Orbit</span>
+          </span>
+          <span style={{ opacity: 0.35 }}>•</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <kbd style={{ background: 'rgba(255,255,255,0.15)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.65rem', fontFamily: 'monospace' }}>SPACE</kbd>
+            <span>Flip 3D</span>
+          </span>
+          {!isMobile && (
+            <>
+              <span style={{ opacity: 0.35 }}>•</span>
+              <span style={{ opacity: 0.8 }}>Drag or Scroll to Fan</span>
+            </>
+          )}
+        </div>
+      )}
 
       {/* COLOR PROPERTIES MODAL (When clicking any color chip) */}
       {activeChip && (
