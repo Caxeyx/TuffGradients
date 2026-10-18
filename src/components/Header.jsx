@@ -72,15 +72,22 @@ export default function Header({ activeTab, setActiveTab, isDark, setIsDark, onR
         </div>
 
         {/* Apple Segmented Navigation Pill */}
-        <nav style={{
-          display: 'flex',
-          alignItems: 'center',
-          background: 'var(--bg-subtle)',
-          padding: '4px',
-          borderRadius: 'var(--radius-full)',
-          border: '1px solid var(--border-subtle)',
-          boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.03)'
-        }}>
+        <nav 
+          className="no-scrollbar"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            background: 'var(--bg-subtle)',
+            padding: '4px',
+            borderRadius: 'var(--radius-full)',
+            border: '1px solid var(--border-subtle)',
+            boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.03)',
+            maxWidth: '100%',
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'none'
+          }}
+        >
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -99,7 +106,9 @@ export default function Header({ activeTab, setActiveTab, isDark, setIsDark, onR
                   color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
                   background: isActive ? 'var(--bg-secondary)' : 'transparent',
                   boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)' : 'none',
-                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0
                 }}
               >
                 <Icon size={15} style={{ opacity: isActive ? 1 : 0.7 }} />
