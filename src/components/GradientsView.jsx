@@ -6,6 +6,7 @@ import { parseGrdArrayBuffer } from '../utils/grdParser';
 import rawCaseyxPackData from '../data/caseyxGrdPack.json';
 import Booklet from './Booklet';
 import { BOOKLETS } from '../data/bookletData';
+import OptionWheel from './ui/option-wheel';
 
 // Unify CaseyX Pack as the official Casey's Choice collection
 const CASEYS_CHOICE_FULL = rawCaseyxPackData.map(g => ({
@@ -16,6 +17,7 @@ const CASEYS_CHOICE_FULL = rawCaseyxPackData.map(g => ({
 
 export default function GradientsView({ onCopy, copiedHex }) {
   const [activeCategory, setActiveCategory] = useState("Casey's Choice (268)");
+  const [showWheelPicker, setShowWheelPicker] = useState(false);
   const [importedGradients, setImportedGradients] = useState([]);
   const [searchGrdQuery, setSearchGrdQuery] = useState('');
   const [isParsingGrd, setIsParsingGrd] = useState(false);
@@ -641,8 +643,30 @@ export default function GradientsView({ onCopy, copiedHex }) {
         gap: '14px',
         marginBottom: '26px'
       }}>
-        {/* Category Pills */}
-        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+        {/* Category Pills & 3D Wheel Toggle */}
+        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', scrollbarWidth: 'none', alignItems: 'center' }}>
+          <button
+            onClick={() => setShowWheelPicker(!showWheelPicker)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '7px 16px',
+              borderRadius: 'var(--radius-full)',
+              fontSize: '0.84rem',
+              fontWeight: 700,
+              background: showWheelPicker ? 'var(--accent-apple-blue)' : 'var(--bg-subtle)',
+              color: showWheelPicker ? '#ffffff' : 'var(--accent-apple-blue)',
+              border: '1px solid var(--border-focus)',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap'
+            }}
+            title="Toggle 3D Kinetic Option Wheel"
+          >
+            <Sliders size={14} />
+            <span>3D Wheel</span>
+          </button>
+
           {categories.map((c) => {
             const isSelected = activeCategory === c;
             const isCasey = c.startsWith("Casey's Choice");
@@ -705,6 +729,76 @@ export default function GradientsView({ onCopy, copiedHex }) {
           )}
         </div>
       </div>
+
+      {/* Expandable 3D Option Wheel Drawer */}
+      {showWheelPicker && (
+        <div style={{
+          backgroundColor: 'var(--bg-secondary)',
+          border: '1px solid var(--border-focus)',
+          borderRadius: '20px',
+          padding: '24px',
+          marginBottom: '32px',
+          boxShadow: 'var(--shadow-md)',
+          animation: 'fadeIn 0.25s ease-out'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div>
+              <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--accent-apple-blue)' }}>
+                Physics Kinetic Selector
+              </span>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: '2px 0 0 0' }}>
+                Kinetic 3D Category Wheel
+              </h3>
+            </div>
+            <button
+              onClick={() => setShowWheelPicker(false)}
+              style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                background: 'var(--bg-subtle)',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer'
+              }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+
+          <div style={{
+            height: '280px',
+            width: '100%',
+            borderRadius: '16px',
+            backgroundColor: 'var(--bg-subtle)',
+            border: '1px solid var(--border-subtle)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <OptionWheel
+              items={categories}
+              defaultSelected={categories.indexOf(activeCategory) >= 0 ? categories.indexOf(activeCategory) : 0}
+              side="left"
+              fontSize={1.8}
+              spacing={1.5}
+              tilt={8}
+              curve={1.2}
+              inset={40}
+              activeColor="#FF2D55"
+              textColor="var(--text-tertiary)"
+              onChange={(index, item) => {
+                setActiveCategory(item);
+              }}
+              className="h-full w-full"
+            />
+          </div>
+          <p style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', textAlign: 'center', marginTop: '10px', margin: '10px 0 0 0' }}>
+            Drag vertically, scroll wheel, or use arrow keys to spin through categories. Current active: <strong style={{ color: 'var(--text-primary)' }}>{activeCategory}</strong>
+          </p>
+        </div>
+      )}
 
       {/* Catalog of Designer Gradients */}
       <div style={{
