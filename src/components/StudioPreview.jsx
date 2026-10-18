@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Smartphone, Monitor, ShoppingBag, Layers, Play, Check, Copy } from 'lucide-react';
 import { CURATED_PALETTES, PREMIUM_GRADIENTS } from '../data/colorCatalog';
+import OptionWheelDemo from './ui/option-wheel-demo';
 
 export default function StudioPreview({ activePalette, onCopy, copiedHex }) {
   const [deviceView, setDeviceView] = useState('mobile'); // 'mobile' | 'desktop'
@@ -327,6 +328,38 @@ export default function StudioPreview({ activePalette, onCopy, copiedHex }) {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Interactive 3D Option Wheel Playground Section */}
+      <div style={{
+        marginTop: '60px',
+        padding: '36px',
+        borderRadius: '24px',
+        backgroundColor: 'var(--bg-secondary)',
+        border: '1px solid var(--border-subtle)',
+        boxShadow: 'var(--shadow-md)'
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+          <span style={{
+            fontSize: '0.75rem',
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            color: 'var(--accent-apple-blue)',
+            display: 'inline-block',
+            marginBottom: '6px'
+          }}>
+            Physics-Based Kinetic UI
+          </span>
+          <h2 style={{ fontSize: '1.8rem', fontWeight: 800, margin: '0 0 8px 0', letterSpacing: '-0.03em' }}>
+            Interactive Option Wheel Component
+          </h2>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0, maxWidth: '600px', margin: '0 auto' }}>
+            Drag vertically, scroll your mouse wheel, or use arrow keys to spin the 3D cylindrical option wheel.
+          </p>
+        </div>
+
+        <OptionWheelDemo />
       </div>
     </div>
   );
