@@ -1,9 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { Copy, Check, Sparkles, Sliders, Layers, Plus, Trash2, Crown, Upload, FileUp, AlertCircle, Zap, Search, X } from 'lucide-react';
+import { Copy, Check, Sparkles, Sliders, Layers, Plus, Trash2, Crown, Upload, FileUp, AlertCircle, Zap, Search, X, BookOpen } from 'lucide-react';
 import { PREMIUM_GRADIENTS } from '../data/colorCatalog';
 import { getClosestPantone } from '../utils/colorEngine';
 import { parseGrdArrayBuffer } from '../utils/grdParser';
 import rawCaseyxPackData from '../data/caseyxGrdPack.json';
+import Booklet from './Booklet';
+import { BOOKLETS } from '../data/bookletData';
 
 // Unify CaseyX Pack as the official Casey's Choice collection
 const CASEYS_CHOICE_FULL = rawCaseyxPackData.map(g => ({
@@ -246,6 +248,63 @@ export default function GradientsView({ onCopy, copiedHex }) {
           <span>Load Casey's Favorite (FIRE 1)</span>
         </button>
       </div>
+
+      {/* Interactive Gradient Swatch Booklets Section */}
+      <section style={{ marginBottom: '48px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <div style={{
+                width: '26px',
+                height: '26px',
+                borderRadius: '8px',
+                background: 'rgba(0, 113, 227, 0.12)',
+                color: '#0071E3',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <BookOpen size={15} />
+              </div>
+              <h2 style={{ fontSize: '1.45rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
+                Gradient Swatch Booklets
+              </h2>
+            </div>
+            <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', margin: 0 }}>
+              Physical-style edition booklets. Hover to lift, click to swing the cover open with 3D GSAP animation, and tap any swatch page to copy its HEX.
+            </p>
+          </div>
+
+          <span style={{
+            fontSize: '0.74rem',
+            fontWeight: 700,
+            color: 'var(--text-secondary)',
+            background: 'var(--bg-subtle)',
+            padding: '5px 12px',
+            borderRadius: 'var(--radius-full)',
+            border: '1px solid var(--border-subtle)'
+          }}>
+            {BOOKLETS.length} Curated Editions • Extensible in <code style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-apple-blue)' }}>bookletData.js</code>
+          </span>
+        </div>
+
+        {/* Booklets Grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+          gap: '32px',
+          padding: '12px 0 24px 0'
+        }}>
+          {BOOKLETS.map((booklet) => (
+            <Booklet
+              key={booklet.id}
+              booklet={booklet}
+              onCopy={onCopy}
+              copiedHex={copiedHex}
+            />
+          ))}
+        </div>
+      </section>
 
       {/* Photoshop .GRD File Import Dropzone */}
       <div style={{
